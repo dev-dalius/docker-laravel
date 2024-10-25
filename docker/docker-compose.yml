@@ -1,0 +1,53 @@
+services:
+    nginx:
+        container_name: nginx
+        build: nginx
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ../src:/var/www/laravel
+            - ./certs:/etc/nginx/certs
+            - phpsockets:/var/run/sockets
+        networks:
+            laravel:
+                aliases:
+                    - laravel.local
+    php:
+        container_name: php
+        build: php
+        volumes_from:
+            - nginx
+        environment:
+            REDIS_PORT: 6379
+        networks:
+            laravel:
+    redis:
+        container_name: redis
+        image: "redis:latest"
+        ports:
+            - "6379:6379"
+        networks:
+            laravel:
+    mysql:
+        container_name: mysql
+        build: mysql
+        ports:
+            - "3306:3306"
+        command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+        volumes:
+            - ./mysql/templates/init:/docker-entrypoint-initdb.d
+        environment:
+            MYSQL_ROOT_PASSWORD: toor
+        networks:
+            laravel:
+    node:
+        container_name: node
+        build: node
+        volumes:
+            - ../src:/var/www/laravel
+networks:
+    laravel:
+        driver: bridge
+volumes:
+    phpsockets:
